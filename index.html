@@ -88,7 +88,7 @@
         }
 
         @keyframes scan {
-            0%, 100__% { top: 20%; }
+            0%, 100% { top: 20%; }
             50% { top: 80%; }
         }
 
@@ -237,52 +237,15 @@
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 
-        /* ==========================================================================
-           UNIVERSAL MOBILE ENGINE OPTIMIZATION (BREAKPOINT PIPELINE)
-           ========================================================================== */
         @media (max-width: 900px) {
-            body {
-                overflow-y: auto;
-            }
-
-            .app-container {
-                display: block;
-                height: auto;
-            }
-
-            header {
-                padding: 15px 20px;
-                text-align: center;
-                flex-direction: column;
-            }
-
-            .dashboard-grid {
-                grid-template-columns: 1fr;
-                display: flex;
-                flex-direction: column;
-            }
-
-            .control-sidebar {
-                border-right: none;
-                border-bottom: 1px solid var(--border);
-                padding: 20px;
-                gap: 10px;
-                overflow-y: visible;
-            }
-
-            .nav-node:hover, .nav-node.active {
-                transform: none; /* Clear translate shifts on touch screen devices */
-            }
-
-            .terminal-workspace {
-                padding: 20px;
-                height: 500px; /* Locked standard sizing container for mobile viewport frames */
-                grid-template-rows: 1fr auto;
-            }
-
-            .contact-info-block {
-                margin-top: 20px;
-            }
+            body { overflow-y: auto; }
+            .app-container { display: block; height: auto; }
+            header { padding: 15px 20px; text-align: center; flex-direction: column; }
+            .dashboard-grid { grid-template-columns: 1fr; display: flex; flex-direction: column; }
+            .control-sidebar { border-right: none; border-bottom: 1px solid var(--border); padding: 20px; gap: 10px; overflow-y: visible; }
+            .nav-node:hover, .nav-node.active { transform: none; }
+            .terminal-workspace { padding: 20px; height: 500px; grid-template-rows: 1fr auto; }
+            .contact-info-block { margin-top: 20px; }
         }
     </style>
 </head>
@@ -320,9 +283,8 @@
                 
                 <div class="contact-info-block">
                     LOC DATA: <span style="color:#fff;">Kota, Rajasthan, India</span><br>
-                    COM PORT: <span style="color:#fff;">+91 8690835978</span><br>
                     SECURE INBOX: <a href="mailto:priyarajsinghrathore13@gmail.com" style="color: var(--accent); text-decoration: none;">priyarajsinghrathore13@gmail.com</a><br>
-                    <a href="https://www.linkedin.com/in/priyaraj-singh-rathore-40713931b" target="_blank" class="hack-btn" style="display:block; padding: 10px; font-size:0.7rem; margin-top:15px; text-decoration:none; text-align:center;">LinkedIn Handshake</a>
+                    <a href="https://www.linkedin.com/in/priyaraj-singh-rathore-40713931b" target="_blank" class="hack-btn" style="display:block; padding: 10px; font-size:0.7rem; margin-top:15px; text-decoration:none; text-align:center;" onclick="playAudioTone(880, 0.15)">LinkedIn Handshake</a>
                 </div>
             </div>
 
@@ -337,7 +299,42 @@
     </div>
 
     <script>
+        // Native Web Audio Synthesizer Engine
+        let audioCtx = null;
+
+        function initAudioEngine() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        function playAudioTone(frequency, duration, type = 'sine') {
+            try {
+                initAudioEngine();
+                if (!audioCtx) return;
+
+                const osc = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+
+                osc.type = type;
+                osc.frequency.setValueAtTime(frequency, audioCtx.currentTime);
+                
+                gainNode.gain.setValueAtTime(0.04, audioCtx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + duration);
+
+                osc.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+
+                osc.start();
+                osc.stop(audioCtx.currentTime + duration);
+            } catch (e) {
+                console.warn("Audio node blocked by client browser policies.");
+            }
+        }
+
         function bypassGate() {
+            initAudioEngine();
+            playAudioTone(520, 0.1, 'triangle');
             const statusLog = document.getElementById('gateLogs');
             statusLog.textContent = "ATTEMPTING EXPLOIT CORRUPTION...";
             let progress = 0;
@@ -345,8 +342,11 @@
             const hackSequence = setInterval(() => {
                 progress += 25;
                 statusLog.textContent = `OVERFLOW BUFFER INJECTED: ${progress}%`;
+                playAudioTone(800 + progress, 0.05, 'sine');
+                
                 if(progress >= 100) {
                     clearInterval(hackSequence);
+                    setTimeout(() => { playAudioTone(1200, 0.3, 'sine'); }, 100);
                     document.getElementById('gatekeeper').style.opacity = '0';
                     document.getElementById('gatekeeper').style.transform = 'translateY(-30px)';
                     setTimeout(() => {
@@ -385,16 +385,28 @@
         }
 
         function executeSystemMacro(key, btnRef) {
+            playAudioTone(600, 0.08, 'sine');
             if(btnRef) {
                 document.querySelectorAll('.nav-node').forEach(node => node.classList.remove('active'));
                 btnRef.classList.add('active');
             }
             logToConsole(`cat /sectors/${key}.db`, 'command');
+            
+            // Text deceleration audio loop
+            let streamProgress = 0;
+            const audioInterval = setInterval(() => {
+                if (streamProgress < 5) {
+                    playAudioTone(1000 + (Math.random() * 200), 0.02, 'sine');
+                    streamProgress++;
+                } else {
+                    clearInterval(audioInterval);
+                }
+            }, 40);
+
             setTimeout(() => {
                 logToConsole(database[key]);
             }, 150);
             
-            // Auto scroll down to terminal window layout frame on small devices for optimized UX
             if(window.innerWidth <= 900) {
                 document.querySelector('.terminal-workspace').scrollIntoView({ behavior: 'smooth' });
             }
@@ -411,6 +423,7 @@
             if(!cleanCmd) return;
 
             logToConsole(rawString, 'command');
+            playAudioTone(700, 0.05, 'sine');
 
             setTimeout(() => {
                 switch(cleanCmd) {
@@ -422,8 +435,10 @@
                     case 'skills': executeSystemMacro('spectrum'); break;
                     case 'clear':
                         consoleBuffer.innerHTML = '';
+                        playAudioTone(400, 0.15, 'triangle');
                         break;
                     default:
+                        playAudioTone(300, 0.2, 'sawtooth');
                         logToConsole(`Command configuration error: "${rawString}" not recognized. Type 'help' for instructions.`, 'system');
                 }
             }, 100);
